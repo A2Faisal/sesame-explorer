@@ -22,21 +22,6 @@ PREFERRED_ORDER = [
     "Cryosphere"
 ]
 
-@st.cache_data(show_spinner=False)
-def list_spheres(atlas_root: str) -> list[str]:
-    root = Path(atlas_root).expanduser()
-    if not root.exists():
-        return []
-    spheres = [p.name for p in root.iterdir() if p.is_dir()]
-    return sorted(spheres, key=lambda x: PREFERRED_ORDER.index(x) if x in PREFERRED_ORDER else 999)
-
-
-@st.cache_data(show_spinner=False)
-def list_nc_in_sphere(atlas_root: str, sphere: str) -> list[str]:
-    root = Path(atlas_root).expanduser() / sphere
-    if not root.exists():
-        return []
-    return sorted([str(p) for p in root.rglob("*.nc")])
 
 @st.cache_data(show_spinner=False)
 def open_dataset(path: str) -> xr.Dataset:
@@ -151,7 +136,19 @@ def parse_levels(s: str):
         return "INVALID"
     return n
 
+def get_manifest_url_or_local():
+    # 1) Optional override via Streamlit secrets or env (useful if you ever want to point to a different manifest)
+    url = st.secrets.get("ATLAS_MANIFEST_URL", None) if hasattr(st, "secrets") else None
+    url = url or os.environ.get("ATLAS_MANIFEST_URL", None)
+    if url:
+        return ("url", url)
 
+    # 2) Default: local file in the repo
+    local = Path(__file__).parent / "atlas_manifest.json"
+    if local.exists():
+        return ("local", str(local))
+
+    return (None, None)
 
 st.set_page_config(page_title="The SESAME Human-Earth Atlas Explorer", layout="wide")
 st.title("The SESAME Human-Earth Atlas Explorer")
@@ -159,17 +156,16 @@ st.title("The SESAME Human-Earth Atlas Explorer")
 
 # Sidebar
 st.sidebar.header("Data")
-
-MANIFEST_URL = (
-    st.secrets.get("ATLAS_MANIFEST_URL", None)
-    or os.environ.get("ATLAS_MANIFEST_URL", None)
-)
-
-if not MANIFEST_URL:
-    st.error("Atlas manifest URL is not configured.")
+kind, source = get_manifest_url_or_local()
+if not source:
+    st.error("atlas_manifest.json not found and ATLAS_MANIFEST_URL not set.")
     st.stop()
 
-manifest = load_manifest(MANIFEST_URL)
+if kind == "local":
+    with open(source, "r") as f:
+        manifest = json.load(f)
+else:
+    manifest = load_manifest(source)
 
 spheres = sorted(manifest.keys())
 if not spheres:
@@ -194,6 +190,7 @@ file_choice = st.sidebar.selectbox(
 )
 
 file_url = filtered[display_names.index(file_choice)]
+original_nc_name = Path(file_url).name
 
 local_nc = download_if_needed(file_url)
 file_path = str(local_nc)  # keep compatibility with the rest of your code
@@ -220,8 +217,6 @@ time_dim = find_dim(ds, TIME_DIM)
 depth_dim = find_dim(ds, DEPTH_DIM)
 
 da = ds[var]
-extra_dims = [d for d in da.dims if d not in {lat_dim, lon_dim} and d is not None]
-
 # Time selection (optional)
 time_dim, time_opts = get_time_options(ds)
 
@@ -229,7 +224,7 @@ time_choice = None
 time_idx = None
 
 if time_dim and time_opts:
-    default_time = str(default_last_coord_value(ds, time_dim))
+    default_time = time_opts[-1]
     time_choice = st.sidebar.selectbox(
         f"Time slice ({time_dim})",
         time_opts,
@@ -265,16 +260,44 @@ time_agg_enabled = len(time_multi_choices) > 0
 
 depth_choice = None
 depth_idx = None
+depth_agg_op = "mean"
+depth_multi_choices = []
+depth_agg_enabled = False
 
 if depth_dim and depth_dim in da.dims:
-    depth_vals = [str(v) for v in (ds[depth_dim].values if depth_dim in ds.coords else range(ds.sizes[depth_dim]))]
+    depth_vals = (
+        [str(v) for v in ds[depth_dim].values]
+        if depth_dim in ds.coords
+        else [str(i) for i in range(ds.sizes[depth_dim])]
+    )
+
+    # Single depth slice (keep this)
     depth_choice = st.sidebar.selectbox(
         f"Depth slice ({depth_dim})",
         depth_vals,
         index=0,
         key=f"{Path(file_path).stem}__{var}__depth"
     )
-    depth_idx = depth_vals.index(depth_choice)  
+    depth_idx = depth_vals.index(depth_choice)
+
+    # Depth aggregation (new)
+    with st.sidebar.expander("Depth aggregation", expanded=False):
+        depth_multi_choices = st.multiselect(
+            f"Select {depth_dim} values",
+            options=depth_vals,
+            default=[],
+            key=f"{Path(file_path).stem}__{var}__depth_multi"
+        )
+
+        depth_agg_op = st.selectbox(
+            "Operation",
+            ["mean", "sum", "min", "max", "median", "std"],
+            index=0,
+            key=f"{Path(file_path).stem}__{var}__depth_agg_op"
+        )
+
+    depth_agg_enabled = len(depth_multi_choices) > 0
+
 
 da0 = ds[var]
 title = get_attr(da0, "long_name", default=var)
@@ -316,7 +339,7 @@ left, right = st.columns([2, 1], gap="large")
 with right:
     st.subheader("Metadata")
     st.write("**Sphere:**", sphere)
-    st.write("**File:**", Path(file_path).name)
+    st.write("**File:**", original_nc_name)
     st.write("**Variable:**", var)
     st.write("**Dims:**", dict(ds.sizes))
     if var in ds and getattr(ds[var], "attrs", None):
@@ -432,12 +455,43 @@ with left:
                 else:
                     ds_plot[var] = ds_plot[var].squeeze(drop=True)
 
-        if depth_dim and depth_idx is not None and depth_dim in ds_plot[var].dims:
-            if depth_dim in ds_plot.coords:
-                selected_depth = ds_plot[depth_dim].values[depth_idx]
-                ds_plot = ds_plot.sel({depth_dim: selected_depth})
+        # ---- Depth: aggregate if user selected multiple, else single depth ----
+        if depth_dim and depth_dim in ds_plot[var].dims:
+            if depth_agg_enabled:
+                depth_indices = [depth_vals.index(d) for d in depth_multi_choices]
+                depth_indices = sorted(set(depth_indices))
+                ds_plot = ds_plot.isel({depth_dim: depth_indices})
+
+                if len(depth_indices) > 1:
+                    da_tmp = ds_plot[var]
+
+                    if depth_agg_op == "mean":
+                        da_out = da_tmp.mean(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "sum":
+                        da_out = da_tmp.sum(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "min":
+                        da_out = da_tmp.min(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "max":
+                        da_out = da_tmp.max(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "median":
+                        da_out = da_tmp.median(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "std":
+                        da_out = da_tmp.std(dim=depth_dim, skipna=True)
+                    else:
+                        da_out = da_tmp.mean(dim=depth_dim, skipna=True)
+
+                    ds_plot[var] = da_out.squeeze(drop=True)
+                else:
+                    ds_plot[var] = ds_plot[var].squeeze(drop=True)
+
             else:
-                ds_plot = ds_plot.isel({depth_dim: depth_idx})
+                if depth_idx is not None:
+                    if depth_dim in ds_plot.coords:
+                        selected_depth = ds_plot[depth_dim].values[depth_idx]
+                        ds_plot = ds_plot.sel({depth_dim: selected_depth})
+                    else:
+                        ds_plot = ds_plot.isel({depth_dim: depth_idx})
+
 
         plt.close("all")
         ssm.plot_map(
@@ -494,34 +548,79 @@ with left:
                         da_f = da_f.mean(dim=time_dim, skipna=True)
 
                 da_f = da_f.squeeze(drop=True)
+        # ---- Depth handling (fallback) ----
+        if depth_dim and depth_dim in da_f.dims:
+            if depth_agg_enabled:
+                depth_indices = [depth_vals.index(d) for d in depth_multi_choices]
+                depth_indices = sorted(set(depth_indices))
+                da_f = da_f.isel({depth_dim: depth_indices})
 
-            # ---- Download UI ----
-            st.markdown("### Save figure")
+                if len(depth_indices) > 1:
+                    if depth_agg_op == "mean":
+                        da_f = da_f.mean(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "sum":
+                        da_f = da_f.sum(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "min":
+                        da_f = da_f.min(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "max":
+                        da_f = da_f.max(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "median":
+                        da_f = da_f.median(dim=depth_dim, skipna=True)
+                    elif depth_agg_op == "std":
+                        da_f = da_f.std(dim=depth_dim, skipna=True)
+                    else:
+                        da_f = da_f.mean(dim=depth_dim, skipna=True)
 
-            fmt = st.selectbox("Format", ["png", "pdf", "svg"], index=0, key="save_fmt")
-            dpi = st.number_input("DPI (PNG only)", min_value=72, max_value=600, value=300, step=25, key="save_dpi")
+                da_f = da_f.squeeze(drop=True)
+            else:
+                if depth_idx is not None:
+                    da_f = da_f.isel({depth_dim: depth_idx}).squeeze(drop=True)
 
-            safe_sphere = sphere.replace(" ", "_")
-            safe_file = Path(file_path).stem.replace(" ", "_")
-            safe_var = var.replace(" ", "_")
-            timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-            filename = f"SESAME_{safe_sphere}_{safe_file}_{safe_var}_{timestamp}.{fmt}"
+        plt.close("all")
+        fig, ax = plt.subplots()
+        da_f.plot(ax=ax)
+        st.pyplot(fig, clear_figure=False)
+        
+# ---- Save figure (single place) ----
+if fig is not None:
+    st.markdown("### Save figure")
 
-            if fig is not None:
-                if fmt in ["pdf", "svg"]:
-                    file_bytes = fig_to_bytes(fig, fmt=fmt, dpi=300)
-                    mime = "application/pdf" if fmt == "pdf" else "image/svg+xml"
-                else:
-                    file_bytes = fig_to_bytes(fig, fmt="png", dpi=int(dpi))
-                    mime = "image/png"
+    fmt = st.selectbox(
+        "Format",
+        ["png", "pdf", "svg"],
+        index=0,
+        key="save_fmt_final"
+    )
 
-                st.download_button(
-                    label=f"Download {fmt.upper()}",
-                    data=file_bytes,
-                    file_name=filename,
-                    mime=mime,
-                    use_container_width=True
-                )
+    dpi = st.number_input(
+        "DPI (PNG only)",
+        min_value=72,
+        max_value=600,
+        value=300,
+        step=25,
+        key="save_dpi_final"
+    )
+
+    safe_sphere = sphere.replace(" ", "_")
+    safe_file = Path(original_nc_name).stem.replace(" ", "_")
+    safe_var = var.replace(" ", "_")
+    timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    filename = f"SESAME_{safe_sphere}_{safe_file}_{safe_var}_{timestamp}.{fmt}"
+
+    if fmt in ["pdf", "svg"]:
+        file_bytes = fig_to_bytes(fig, fmt=fmt, dpi=300)
+        mime = "application/pdf" if fmt == "pdf" else "image/svg+xml"
+    else:
+        file_bytes = fig_to_bytes(fig, fmt="png", dpi=int(dpi))
+        mime = "image/png"
+
+    st.download_button(
+        label=f"Download {fmt.upper()}",
+        data=file_bytes,
+        file_name=filename,
+        mime=mime,
+        use_container_width=True
+    )
 
 st.markdown(
     """
