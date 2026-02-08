@@ -226,7 +226,7 @@ time_idx = None
 if time_dim and time_opts:
     default_time = time_opts[-1]
     time_choice = st.sidebar.selectbox(
-        f"Time slice ({time_dim})",
+        f"Time slice",
         time_opts,
         index=(time_opts.index(default_time) if default_time in time_opts else len(time_opts) - 1),
         key=f"{Path(file_path).stem}__{var}__time"
@@ -273,7 +273,7 @@ if depth_dim and depth_dim in da.dims:
 
     # Single depth slice (keep this)
     depth_choice = st.sidebar.selectbox(
-        f"Depth slice ({depth_dim})",
+        f"Depth slice",
         depth_vals,
         index=0,
         key=f"{Path(file_path).stem}__{var}__depth"
@@ -581,46 +581,46 @@ with left:
         da_f.plot(ax=ax)
         st.pyplot(fig, clear_figure=False)
         
-# ---- Save figure (single place) ----
-if fig is not None:
-    st.markdown("### Save figure")
+    # ---- Save figure (single place) ----
+    if fig is not None:
+        st.markdown("### Save figure")
 
-    fmt = st.selectbox(
-        "Format",
-        ["png", "pdf", "svg"],
-        index=0,
-        key="save_fmt_final"
-    )
+        fmt = st.selectbox(
+            "Format",
+            ["png", "pdf", "svg"],
+            index=0,
+            key="save_fmt_final"
+        )
 
-    dpi = st.number_input(
-        "DPI (PNG only)",
-        min_value=72,
-        max_value=600,
-        value=300,
-        step=25,
-        key="save_dpi_final"
-    )
+        dpi = st.number_input(
+            "DPI (PNG only)",
+            min_value=72,
+            max_value=600,
+            value=300,
+            step=25,
+            key="save_dpi_final"
+        )
 
-    safe_sphere = sphere.replace(" ", "_")
-    safe_file = Path(original_nc_name).stem.replace(" ", "_")
-    safe_var = var.replace(" ", "_")
-    timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
-    filename = f"SESAME_{safe_sphere}_{safe_file}_{safe_var}_{timestamp}.{fmt}"
+        safe_sphere = sphere.replace(" ", "_")
+        safe_file = Path(original_nc_name).stem.replace(" ", "_")
+        safe_var = var.replace(" ", "_")
+        timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+        filename = f"SESAME_{safe_sphere}_{safe_file}_{safe_var}_{timestamp}.{fmt}"
 
-    if fmt in ["pdf", "svg"]:
-        file_bytes = fig_to_bytes(fig, fmt=fmt, dpi=300)
-        mime = "application/pdf" if fmt == "pdf" else "image/svg+xml"
-    else:
-        file_bytes = fig_to_bytes(fig, fmt="png", dpi=int(dpi))
-        mime = "image/png"
+        if fmt in ["pdf", "svg"]:
+            file_bytes = fig_to_bytes(fig, fmt=fmt, dpi=300)
+            mime = "application/pdf" if fmt == "pdf" else "image/svg+xml"
+        else:
+            file_bytes = fig_to_bytes(fig, fmt="png", dpi=int(dpi))
+            mime = "image/png"
 
-    st.download_button(
-        label=f"Download {fmt.upper()}",
-        data=file_bytes,
-        file_name=filename,
-        mime=mime,
-        use_container_width=True
-    )
+        st.download_button(
+            label=f"Download {fmt.upper()}",
+            data=file_bytes,
+            file_name=filename,
+            mime=mime,
+            use_container_width=True
+        )
 
 st.markdown(
     """
