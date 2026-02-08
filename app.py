@@ -161,13 +161,13 @@ st.title("The SESAME Human-Earth Atlas Explorer")
 # Sidebar
 st.sidebar.header("Data")
 
-MANIFEST_URL = st.sidebar.text_input(
-    "Atlas manifest URL",
-    value=os.environ.get("ATLAS_MANIFEST_URL", "")
-).strip()
+MANIFEST_URL = os.environ.get(
+    "ATLAS_MANIFEST_URL",
+    "https://raw.githubusercontent.com/A2Faisal/sesame-explorer/main/atlas_manifest.json"
+)
 
 if not MANIFEST_URL:
-    st.error("Set ATLAS_MANIFEST_URL to a public atlas_manifest.json")
+    st.error("Atlas manifest URL is not configured.")
     st.stop()
 
 manifest = load_manifest(MANIFEST_URL)
@@ -184,18 +184,17 @@ if not urls:
     st.warning(f"No files listed for {sphere}")
     st.stop()
 
-search = st.sidebar.text_input("Search filename", value="")
-filtered = [u for u in urls if search.lower() in u.split("/")[-1].lower()] if search else urls
-if not filtered:
-    st.warning("No files match your search.")
-    st.stop()
+filtered = urls
 
 # If filenames can repeat across subfolders, this mapping can collide.
-# Safer: show relative path under sphere when possible.
-display = [u.replace(f"/{sphere}/", f"{sphere}/").split("/atlas/")[-1] for u in filtered]
-file_choice = st.sidebar.selectbox("NetCDF file (.nc)", display)
+display_names = [Path(u).name for u in filtered]
 
-file_url = filtered[display.index(file_choice)]
+file_choice = st.sidebar.selectbox(
+    "NetCDF file (.nc)",
+    display_names
+)
+
+file_url = filtered[display_names.index(file_choice)]
 
 local_nc = download_if_needed(file_url)
 file_path = str(local_nc)  # keep compatibility with the rest of your code
