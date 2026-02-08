@@ -1,0 +1,54 @@
+{
+  "Atmosphere": [
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.aerosols.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.aerosols.2000-2022.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.energy_balance.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.energy_balance.2000-2022.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.surface_weather.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.surface_weather.2000-2022.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.surface_weather.temp_prec.1950-2024.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Atmosphere/A.surface_weather.temp_prec.1950-2024.clim_m.nc"
+  ],
+  "Biosphere": [
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.biomes.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.food.2015.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.forest.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.land.biomes.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.landcover.2001-2023.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.ocean.primary_production.1998-2023.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.primary_production.2001-2023.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/B.species.2024.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/Bh.human_footprint.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/Bh.monetary.2000-2020.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Biosphere/Bh.population.2000-2020.a.nc"
+  ],
+  "Hydrosphere": [
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.freshwater.river_lake.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.freshwater.streamflow.1960-2015.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.chemistry.1965-2022.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.color.2012-2025.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.color.2012-2025.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.mixed_layer.clim_m.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.temperature.1870-2023.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Hydrosphere/H.ocean.temperature.1870-2023.clim_m.nc"
+  ],
+  "Lithosphere": [
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Lithosphere/L.extraction.phosphate.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Lithosphere/L.rock.surface_lithology.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Lithosphere/L.soil.nc"
+  ],
+  "Technosphere": [
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.2021.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.buildings.2000-2020.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.food_provision.agricultural_machinery.2001-2021.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.nighttime_light.1992-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.air.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.merchant_fleet.2011-2021.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.pipelines.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.railways.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.roads.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.rolling_stocks.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.vehicles_land.2000-2022.a.nc",
+    "https://earth.cs.mcgill.ca/sesame-explorer/atlas/Technosphere/T.transportation.vehicles_land.2022.nc"
+  ]
+}

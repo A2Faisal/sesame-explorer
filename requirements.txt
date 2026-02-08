@@ -1,0 +1,9 @@
+streamlit
+xarray
+h5netcdf
+netCDF4
+numpy
+matplotlib
+cartopy
+requests
+sesame-iesd==0.1.9
