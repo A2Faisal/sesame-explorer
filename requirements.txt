@@ -6,4 +6,4 @@ numpy
 matplotlib
 cartopy
 requests
-sesame-iesd==0.1.9
+sesame-iesd
