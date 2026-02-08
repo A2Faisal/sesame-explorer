@@ -81,7 +81,6 @@ def download_if_needed(url: str) -> Path:
     return local
 
 
-
 def get_time_options(ds: xr.Dataset) -> tuple[str | None, list[str]]:
     """
     Returns (time_dim_name, time_values_as_strings_for_UI).
@@ -161,9 +160,9 @@ st.title("The SESAME Human-Earth Atlas Explorer")
 # Sidebar
 st.sidebar.header("Data")
 
-MANIFEST_URL = os.environ.get(
-    "ATLAS_MANIFEST_URL",
-    "https://raw.githubusercontent.com/A2Faisal/sesame-explorer/main/atlas_manifest.json"
+MANIFEST_URL = (
+    st.secrets.get("ATLAS_MANIFEST_URL", None)
+    or os.environ.get("ATLAS_MANIFEST_URL", None)
 )
 
 if not MANIFEST_URL:
