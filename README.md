@@ -72,3 +72,20 @@ git clone https://github.com/A2Faisal/sesame-explorer.git
 cd sesame-explorer
 pip install -r requirements.txt
 streamlit run app.py
+```
+
+## License and Disclaimer
+
+The SESAME Explorer is provided for **research and educational purposes**.
+
+While every effort has been made to ensure accuracy, the authors and affiliated institutions assume no responsibility for errors, omissions, or interpretations arising from the use of these data or visualizations.
+
+---
+
+## Contact
+
+For questions, issues, or contributions, please open an issue on GitHub or refer to the main SESAME project repository:
+
+https://github.com/A2Faisal/SESAME
+
+You may also contact the maintainer directly at: [abdullah-al.faisal@mail.mcgill.ca](mailto:abdullah-al.faisal@mail.mcgill.ca)
