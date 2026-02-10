@@ -633,9 +633,6 @@ st.markdown(
     </a>.<br>
     <br>
     The data and visualizations provided here are for research and educational purposes.
-    While every effort has been made to ensure accuracy, the authors and affiliated
-    institutions assume no responsibility for errors, omissions, or interpretations
-    arising from the use of these data.
     </small>
     """,
     unsafe_allow_html=True
